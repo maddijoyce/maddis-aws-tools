@@ -139,7 +139,7 @@ function uploadAll() {
                 }
                 const typeFiles = fs.readdirSync(path.join(apiFolder, file));
                 for (const typeFile of typeFiles) {
-                    if (typeFile.indexOf('.json') < 0) {
+                    if (fs.existsSync(path.join(apiFolder, file, typeFile, 'configuration.json'))) {
                         const definition = fs.readFileSync(path.join(apiFolder, file, typeFile, 'definition.gql'), 'utf8');
                         const type = JSON.parse(fs.readFileSync(path.join(apiFolder, file, typeFile, 'configuration.json'), 'utf8'));
                         yield appsync.updateType({
