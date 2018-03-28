@@ -1,10 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as AWS from 'aws-sdk';
+import { format } from 'prettier';
 
 import * as pools from './pools';
 import * as roles from './roles';
-import { base } from './config';
+import { base, config } from './config';
 
 const appsync = new AWS.AppSync();
 const apiFolder = path.join(base, 'apis');
@@ -47,7 +48,7 @@ export async function downloadAll() {
             dataSourceName: resolver.dataSourceName,
           })),
         }, null, 2));
-        fs.writeFileSync(path.join(typeFolder, 'definition.gql'), type.definition);
+        fs.writeFileSync(path.join(typeFolder, 'definition.gql'), format(type.definition || '', { parser: 'graphql' }).replace(/\n\n/g, '\n'));
       }
 
       fs.writeFileSync(path.join(myApiFolder, 'configuration.json'), JSON.stringify({
@@ -132,6 +133,77 @@ export async function uploadAll() {
 
         await appsync.updateDataSource(dataSource).promise();
       }
+
+      const typeFiles = fs.readdirSync(path.join(apiFolder, file));
+      for (const typeFile of typeFiles) {
+        if (typeFile !== 'configuration.json') {
+          const definition = fs.readFileSync(path.join(apiFolder, file, typeFile, 'definition.gql'), 'utf8');
+          const type = JSON.parse(fs.readFileSync(path.join(apiFolder, file, typeFile, 'configuration.json'), 'utf8'));
+
+          await appsync.updateType({
+            apiId: api.apiId,
+            typeName: type.typeName,
+            format: 'SDL',
+            definition: definition,
+          }).promise();
+
+          for (const resolver of type.resolvers) {
+            const request = fs.readFileSync(path.join(apiFolder, file, typeFile, `${resolver.fieldName}.request.vtl`), 'utf8');
+            const response = fs.readFileSync(path.join(apiFolder, file, typeFile, `${resolver.fieldName}.response.vtl`), 'utf8');
+            await appsync.updateResolver({
+              apiId: api.apiId,
+              typeName: type.typeName,
+              fieldName: resolver.fieldName,
+              dataSourceName: resolver.dataSourceName,
+              requestMappingTemplate: request,
+              responseMappingTemplate: response,
+            }).promise();
+          }
+        }
+      }
     }
   }
+}
+
+export async function createDynamoDataSource(apiName : string, name : string, role : string) {
+  const api = JSON.parse(fs.readFileSync(path.join(apiFolder, apiName, 'configuration.json'), 'utf8'));
+  await appsync.createDataSource({
+    apiId: api.apiId,
+    name: name,
+    type: 'AMAZON_DYNAMODB',
+    dynamodbConfig: {
+      awsRegion: config.region,
+      tableName: name,
+    },
+    serviceRoleArn: role,
+  }).promise();
+  await downloadAll();
+}
+
+export async function createType(apiName : string, typeName : string, typeType : string) {
+  const api = JSON.parse(fs.readFileSync(path.join(apiFolder, apiName, 'configuration.json'), 'utf8'));
+  await appsync.createType({
+    apiId: api.apiId,
+    definition: `${typeType} ${typeName} {
+      id: ID!
+    }`,
+    format: 'SDL',
+  }).promise();
+  await downloadAll();
+}
+
+export async function createResolver(apiName : string, type : string, field : string, dataSource : string) {
+  const api = JSON.parse(fs.readFileSync(path.join(apiFolder, apiName, 'configuration.json'), 'utf8'));
+  await appsync.createResolver({
+    apiId: api.apiId,
+    typeName: type,
+    fieldName: field,
+    dataSourceName: dataSource,
+    requestMappingTemplate: `{
+      "version": "2017-02-28",
+      "payload": $util.toJson($context.identity)
+    }`,
+    responseMappingTemplate: '$util.toJson($context.result)',
+  }).promise();
+  await downloadAll();
 }

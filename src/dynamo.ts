@@ -111,4 +111,58 @@ export async function createTable(name : string, keys : TableKeys) {
   await downloadAll();
 }
 
-createTable('test', { hash: { name: 'id', type: 'S' } });
+export async function addIndex(tableName : string, indexName : string, keys : TableKeys) {
+  const table = JSON.parse(fs.readFileSync(path.join(tableFolder, `${tableName}.json`), 'utf8'));
+
+  const params = {
+    TableName: table.TableName,
+    AttributeDefinitions: table.AttributeDefinitions,
+    GlobalSecondaryIndexUpdates: [{
+      Create: {
+        IndexName: indexName,
+        KeySchema: [{
+          AttributeName: keys.hash.name,
+          KeyType: 'HASH',
+        }],
+        Projection: {
+          ProjectionType: 'ALL',
+        },
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 1,
+          WriteCapacityUnits: 1,
+        }
+      },
+    }],
+  };
+  if (!params.AttributeDefinitions.find((d : any) => (d.AttributeName === keys.hash.name))) {
+    params.AttributeDefinitions.push({
+      AttributeName: keys.hash.name,
+      AttributeType: keys.hash.type,
+    });
+  }
+  if (keys.range) {
+    if (!params.AttributeDefinitions.find((d : any) => (keys.range && d.AttributeName === keys.range.name))) {
+      params.AttributeDefinitions.push({
+        AttributeName: keys.range.name,
+        AttributeType: keys.range.type,
+      });
+    }
+    params.GlobalSecondaryIndexUpdates[0].Create.KeySchema.push({
+      AttributeName: keys.range.name,
+      KeyType: 'RANGE',
+    });
+  }
+
+  await dynamo.updateTable(params).promise();
+  await downloadAll();
+}
+
+export const typeToInitial = (type : string) : 'S' | 'N' | 'B' => {
+  const char = type.charAt(0).toLocaleUpperCase();
+
+  if (char === 'S' || char === 'N' || char === 'B') {
+    return char;
+  } else {
+    throw new Error(`${type} not available (number, string or binary)`);
+  }
+};

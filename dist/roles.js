@@ -68,4 +68,23 @@ function uploadAll() {
     });
 }
 exports.uploadAll = uploadAll;
+function createRole(name) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const res = yield iam.createRole({
+            RoleName: name,
+            AssumeRolePolicyDocument: JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [{
+                        Effect: 'Allow',
+                        Principal: { Service: 'appsync.amazonaws.com' },
+                        Action: 'sts:AssumeRole',
+                    }],
+            }),
+        }).promise();
+        if (res.Role) {
+            yield downloadOne(res.Role.Arn);
+        }
+    });
+}
+exports.createRole = createRole;
 //# sourceMappingURL=roles.js.map

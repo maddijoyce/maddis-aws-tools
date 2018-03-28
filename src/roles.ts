@@ -60,3 +60,20 @@ export async function uploadAll() {
     }
   }
 }
+
+export async function createRole(name : string) {
+  const res = await iam.createRole({
+    RoleName: name,
+    AssumeRolePolicyDocument: JSON.stringify({
+      Version: '2012-10-17',
+      Statement: [{
+        Effect: 'Allow',
+        Principal: { Service: 'appsync.amazonaws.com' },
+        Action: 'sts:AssumeRole',
+      }],
+    }),
+  }).promise();
+  if (res.Role) {
+    await downloadOne(res.Role.Arn);
+  }
+}

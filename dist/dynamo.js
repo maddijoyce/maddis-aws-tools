@@ -119,5 +119,59 @@ function createTable(name, keys) {
     });
 }
 exports.createTable = createTable;
-createTable('test', { hash: { name: 'id', type: 'S' } });
+function addIndex(tableName, indexName, keys) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const table = JSON.parse(fs.readFileSync(path.join(exports.tableFolder, `${tableName}.json`), 'utf8'));
+        const params = {
+            TableName: table.TableName,
+            AttributeDefinitions: table.AttributeDefinitions,
+            GlobalSecondaryIndexUpdates: [{
+                    Create: {
+                        IndexName: indexName,
+                        KeySchema: [{
+                                AttributeName: keys.hash.name,
+                                KeyType: 'HASH',
+                            }],
+                        Projection: {
+                            ProjectionType: 'ALL',
+                        },
+                        ProvisionedThroughput: {
+                            ReadCapacityUnits: 1,
+                            WriteCapacityUnits: 1,
+                        }
+                    },
+                }],
+        };
+        if (!params.AttributeDefinitions.find((d) => (d.AttributeName === keys.hash.name))) {
+            params.AttributeDefinitions.push({
+                AttributeName: keys.hash.name,
+                AttributeType: keys.hash.type,
+            });
+        }
+        if (keys.range) {
+            if (!params.AttributeDefinitions.find((d) => (keys.range && d.AttributeName === keys.range.name))) {
+                params.AttributeDefinitions.push({
+                    AttributeName: keys.range.name,
+                    AttributeType: keys.range.type,
+                });
+            }
+            params.GlobalSecondaryIndexUpdates[0].Create.KeySchema.push({
+                AttributeName: keys.range.name,
+                KeyType: 'RANGE',
+            });
+        }
+        yield dynamo.updateTable(params).promise();
+        yield downloadAll();
+    });
+}
+exports.addIndex = addIndex;
+exports.typeToInitial = (type) => {
+    const char = type.charAt(0).toLocaleUpperCase();
+    if (char === 'S' || char === 'N' || char === 'B') {
+        return char;
+    }
+    else {
+        throw new Error(`${type} not available (number, string or binary)`);
+    }
+};
 //# sourceMappingURL=dynamo.js.map
