@@ -55,6 +55,8 @@ function downloadAll() {
                     }, null, 2));
                     fs.writeFileSync(path.join(typeFolder, 'definition.gql'), prettier_1.format(type.definition || '', { parser: 'graphql' }).replace(/\n\n/g, '\n'));
                 }
+                const introspection = (yield appsync.getIntrospectionSchema({ apiId: api.apiId || '', format: 'JSON' }).promise()).schema || '';
+                fs.writeFileSync(path.join(myApiFolder, 'introspection.json'), introspection.toString());
                 fs.writeFileSync(path.join(myApiFolder, 'configuration.json'), JSON.stringify({
                     apiId: api.apiId,
                     name: api.name,
@@ -137,7 +139,7 @@ function uploadAll() {
                 }
                 const typeFiles = fs.readdirSync(path.join(apiFolder, file));
                 for (const typeFile of typeFiles) {
-                    if (typeFile !== 'configuration.json') {
+                    if (typeFile.indexOf('.json') >= 0) {
                         const definition = fs.readFileSync(path.join(apiFolder, file, typeFile, 'definition.gql'), 'utf8');
                         const type = JSON.parse(fs.readFileSync(path.join(apiFolder, file, typeFile, 'configuration.json'), 'utf8'));
                         yield appsync.updateType({

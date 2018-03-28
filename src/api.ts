@@ -51,6 +51,8 @@ export async function downloadAll() {
         fs.writeFileSync(path.join(typeFolder, 'definition.gql'), format(type.definition || '', { parser: 'graphql' }).replace(/\n\n/g, '\n'));
       }
 
+      const introspection = (await appsync.getIntrospectionSchema({ apiId: api.apiId || '', format: 'JSON' }).promise()).schema || '';
+      fs.writeFileSync(path.join(myApiFolder, 'introspection.json'), introspection.toString());
       fs.writeFileSync(path.join(myApiFolder, 'configuration.json'), JSON.stringify({
         apiId: api.apiId,
         name: api.name,
@@ -136,7 +138,7 @@ export async function uploadAll() {
 
       const typeFiles = fs.readdirSync(path.join(apiFolder, file));
       for (const typeFile of typeFiles) {
-        if (typeFile !== 'configuration.json') {
+        if (typeFile.indexOf('.json') >= 0) {
           const definition = fs.readFileSync(path.join(apiFolder, file, typeFile, 'definition.gql'), 'utf8');
           const type = JSON.parse(fs.readFileSync(path.join(apiFolder, file, typeFile, 'configuration.json'), 'utf8'));
 
