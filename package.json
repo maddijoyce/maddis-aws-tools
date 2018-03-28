@@ -11,7 +11,7 @@
     "maddis-aws-tools": "./dist/index.js"
   },
   "scripts": {
-    "prepare": "build",
+    "prepare": "yarn build",
     "clean": "rm -rf dist",
     "build": "yarn clean && yarn lint && tsc",
     "lint": "tslint -c tslint.json --project tsconfig.json 'src/**/*.ts'"
