@@ -7,7 +7,6 @@ type Environment = {
   AWS_ID : string;
   AWS_SECRET : string;
   AWS_REGION : string;
-  AWS_BACKEND_TAG : string;
   CONFIG_DIR? : string;
 };
 const rcfile = dotenv.config({ path: path.resolve(process.cwd(), '.maddirc') });
@@ -21,7 +20,6 @@ export const config = {
   accessKeyId: parsedrc.AWS_ID,
   secretAccessKey: parsedrc.AWS_SECRET,
   region: parsedrc.AWS_REGION,
-  backendTag: parsedrc.AWS_BACKEND_TAG,
   directory: parsedrc.CONFIG_DIR || 'config',
 };
 

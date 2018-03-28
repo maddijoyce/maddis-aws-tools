@@ -14,37 +14,32 @@ export const funcFolder = path.join(base, 'functions');
 export async function downloadAll() {
   if (!fs.existsSync(funcFolder)) { fs.mkdirSync(funcFolder); }
 
-  const functions = await lambda.listFunctions().promise();
-  if (functions.Functions && functions.Functions.length) {
-    for (const func of functions.Functions) {
-      const tags = await lambda.listTags({ Resource: func.FunctionArn || '' }).promise();
-      if (tags.Tags && tags.Tags.Backend === config.backendTag) {
-        if (!fs.existsSync(path.join(funcFolder, func.FunctionName || '.'))) {
-          fs.mkdirSync(path.join(funcFolder, func.FunctionName || '.'));
-        }
+  const functions = (await lambda.listFunctions().promise()).Functions || [];
+  for (const func of functions) {
+    if (!fs.existsSync(path.join(funcFolder, func.FunctionName || '.'))) {
+      fs.mkdirSync(path.join(funcFolder, func.FunctionName || '.'));
+    }
 
-        fs.writeFileSync(path.join(funcFolder, func.FunctionName || '.', 'configuration.json'), JSON.stringify({
-          FunctionArn: func.FunctionArn,
-          FunctionName: func.FunctionName,
-          Description: func.Description,
-          Handler: func.Handler,
-          Runtime: func.Runtime,
-          Timeout: func.Timeout,
-          Role: func.Role,
-        }, null, 2));
+    fs.writeFileSync(path.join(funcFolder, func.FunctionName || '.', 'configuration.json'), JSON.stringify({
+      FunctionArn: func.FunctionArn,
+      FunctionName: func.FunctionName,
+      Description: func.Description,
+      Handler: func.Handler,
+      Runtime: func.Runtime,
+      Timeout: func.Timeout,
+      Role: func.Role,
+    }, null, 2));
 
-        if (func.Role) {
-          await downloadOne(func.Role);
-        }
+    if (func.Role) {
+      await downloadOne(func.Role);
+    }
 
-        const funcFile = await lambda.getFunction({ FunctionName: func.FunctionName || '' }).promise();
-        if (funcFile && funcFile.Code && funcFile.Code.Location) {
-          https.get(funcFile.Code.Location, (res) =>
-            res.pipe(unzip.Parse())
-              .on('entry', (entry) =>
-                entry.pipe(fs.createWriteStream(path.join(funcFolder, func.FunctionName || '.', entry.path)))));
-        }
-      }
+    const funcFile = await lambda.getFunction({ FunctionName: func.FunctionName || '' }).promise();
+    if (funcFile && funcFile.Code && funcFile.Code.Location) {
+      https.get(funcFile.Code.Location, (res) =>
+        res.pipe(unzip.Parse())
+          .on('entry', (entry) =>
+            entry.pipe(fs.createWriteStream(path.join(funcFolder, func.FunctionName || '.', entry.path)))));
     }
   }
 }

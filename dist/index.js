@@ -7,6 +7,7 @@ const apis = require("./api");
 const lambdas = require("./lambda");
 const pools = require("./pools");
 const roles = require("./roles");
+const dynamos = require("./dynamo");
 program
     .command('download [services...]')
     .option('-v, --verbose', 'More detailed logs')
@@ -20,6 +21,9 @@ program
     }
     if (services.length === 0 || services.indexOf('lambdas') >= 0) {
         lambdas.downloadAll();
+    }
+    if (services.length === 0 || services.indexOf('dynamos') >= 0) {
+        dynamos.downloadAll();
     }
 });
 program
@@ -41,6 +45,9 @@ program
     }
     if (services.length === 0 || services.indexOf('roles') >= 0) {
         roles.uploadAll();
+    }
+    if (services.length === 0 || services.indexOf('dynamos') >= 0) {
+        dynamos.uploadAll();
     }
 });
 program

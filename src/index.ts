@@ -6,6 +6,7 @@ import * as apis from './api';
 import * as lambdas from './lambda';
 import * as pools from './pools';
 import * as roles from './roles';
+import * as dynamos from './dynamo';
 
 program
   .command('download [services...]')
@@ -17,6 +18,7 @@ program
     }
     if (services.length === 0 || services.indexOf('apis') >= 0) { apis.downloadAll(); }
     if (services.length === 0 || services.indexOf('lambdas') >= 0) { lambdas.downloadAll(); }
+    if (services.length === 0 || services.indexOf('dynamos') >= 0) { dynamos.downloadAll(); }
   });
 
 program
@@ -31,6 +33,7 @@ program
     if (services.length === 0 || services.indexOf('lambdas') >= 0) { lambdas.uploadAll(); }
     if (services.length === 0 || services.indexOf('pools') >= 0) { pools.uploadAll(); }
     if (services.length === 0 || services.indexOf('roles') >= 0) { roles.uploadAll(); }
+    if (services.length === 0 || services.indexOf('dynamos') >= 0) { dynamos.uploadAll(); }
   });
 
 program

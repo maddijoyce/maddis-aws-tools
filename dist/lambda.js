@@ -23,31 +23,29 @@ function downloadAll() {
         if (!fs.existsSync(exports.funcFolder)) {
             fs.mkdirSync(exports.funcFolder);
         }
-        const functions = yield lambda.listFunctions().promise();
-        if (functions.Functions && functions.Functions.length) {
-            for (const func of functions.Functions) {
-                const tags = yield lambda.listTags({ Resource: func.FunctionArn || '' }).promise();
-                if (tags.Tags && tags.Tags.Backend === config_1.config.backendTag) {
-                    if (!fs.existsSync(path.join(exports.funcFolder, func.FunctionName || '.'))) {
-                        fs.mkdirSync(path.join(exports.funcFolder, func.FunctionName || '.'));
-                    }
-                    fs.writeFileSync(path.join(exports.funcFolder, func.FunctionName || '.', 'configuration.json'), JSON.stringify({
-                        FunctionArn: func.FunctionArn,
-                        FunctionName: func.FunctionName,
-                        Description: func.Description,
-                        Handler: func.Handler,
-                        Runtime: func.Runtime,
-                        Timeout: func.Timeout,
-                        Role: func.Role,
-                    }, null, 2));
-                    if (func.Role) {
-                        yield roles_1.downloadOne(func.Role);
-                    }
-                    const funcFile = yield lambda.getFunction({ FunctionName: func.FunctionName || '' }).promise();
-                    if (funcFile && funcFile.Code && funcFile.Code.Location) {
-                        https.get(funcFile.Code.Location, (res) => res.pipe(unzip.Parse())
-                            .on('entry', (entry) => entry.pipe(fs.createWriteStream(path.join(exports.funcFolder, func.FunctionName || '.', entry.path)))));
-                    }
+        const functions = (yield lambda.listFunctions().promise()).Functions || [];
+        for (const func of functions) {
+            const tags = yield lambda.listTags({ Resource: func.FunctionArn || '' }).promise();
+            if (tags.Tags && tags.Tags.Backend === config_1.config.backendTag) {
+                if (!fs.existsSync(path.join(exports.funcFolder, func.FunctionName || '.'))) {
+                    fs.mkdirSync(path.join(exports.funcFolder, func.FunctionName || '.'));
+                }
+                fs.writeFileSync(path.join(exports.funcFolder, func.FunctionName || '.', 'configuration.json'), JSON.stringify({
+                    FunctionArn: func.FunctionArn,
+                    FunctionName: func.FunctionName,
+                    Description: func.Description,
+                    Handler: func.Handler,
+                    Runtime: func.Runtime,
+                    Timeout: func.Timeout,
+                    Role: func.Role,
+                }, null, 2));
+                if (func.Role) {
+                    yield roles_1.downloadOne(func.Role);
+                }
+                const funcFile = yield lambda.getFunction({ FunctionName: func.FunctionName || '' }).promise();
+                if (funcFile && funcFile.Code && funcFile.Code.Location) {
+                    https.get(funcFile.Code.Location, (res) => res.pipe(unzip.Parse())
+                        .on('entry', (entry) => entry.pipe(fs.createWriteStream(path.join(exports.funcFolder, func.FunctionName || '.', entry.path)))));
                 }
             }
         }
