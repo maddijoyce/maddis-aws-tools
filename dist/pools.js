@@ -26,7 +26,7 @@ function downloadOne(id) {
             return (yield identity.describeIdentityPool({ IdentityPoolId: IdentityPoolId || '' }).promise());
         })));
         const pool = (yield cognito.describeUserPool({ UserPoolId: id, }).promise()).UserPool;
-        if (pool && pool.UserPoolTags && pool.UserPoolTags.Backend === config_1.config.backendTag) {
+        if (pool) {
             fs.writeFileSync(path.join(poolFolder, `${pool.Id}.json`), JSON.stringify({
                 Id: pool.Id,
                 Name: pool.Name,
@@ -109,9 +109,6 @@ function uploadAll() {
                         UserMigration: pool.LambdaConfig.UserMigration,
                     },
                     MfaConfiguration: pool.MfaConfiguration,
-                    UserPoolTags: {
-                        Backend: config_1.config.backendTag,
-                    },
                 }).promise();
             }
             else if (pool && pool.IdentityPoolId) {

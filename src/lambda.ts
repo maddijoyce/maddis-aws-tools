@@ -6,7 +6,7 @@ import * as zip from 'adm-zip';
 import * as AWS from 'aws-sdk';
 
 import { downloadOne } from './roles';
-import { base, config } from './config';
+import { base } from './config';
 
 const lambda = new AWS.Lambda();
 export const funcFolder = path.join(base, 'functions');

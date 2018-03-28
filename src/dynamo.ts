@@ -1,9 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { sleep } from 'sleep';
 import * as AWS from 'aws-sdk';
 
-import { base, config } from './config';
+import { base } from './config';
 
 const dynamo = new AWS.DynamoDB();
 export const tableFolder = path.join(base, 'tables');
@@ -108,7 +107,7 @@ export async function createTable(name : string, keys : TableKeys) {
     params.KeySchema.push({ AttributeName: keys.range.name, KeyType: 'RANGE' });
   }
 
-  const table = await dynamo.createTable(params).promise();
+  await dynamo.createTable(params).promise();
   await downloadAll();
 }
 

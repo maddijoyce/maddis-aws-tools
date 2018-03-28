@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as AWS from 'aws-sdk';
 
 import * as roles from './roles';
-import { base, config } from './config';
+import { base } from './config';
 
 const identity = new AWS.CognitoIdentity();
 const cognito = new AWS.CognitoIdentityServiceProvider();

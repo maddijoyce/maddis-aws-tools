@@ -13,7 +13,6 @@ exports.config = {
     accessKeyId: parsedrc.AWS_ID,
     secretAccessKey: parsedrc.AWS_SECRET,
     region: parsedrc.AWS_REGION,
-    backendTag: parsedrc.AWS_BACKEND_TAG,
     directory: parsedrc.CONFIG_DIR || 'config',
 };
 exports.base = path.join(process.cwd(), exports.config.directory);

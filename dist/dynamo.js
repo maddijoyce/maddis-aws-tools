@@ -23,53 +23,50 @@ function downloadAll() {
         for (const tableName of tableNames) {
             const table = (yield dynamo.describeTable({ TableName: tableName }).promise()).Table;
             if (table) {
-                const tags = (yield dynamo.listTagsOfResource({ ResourceArn: table.TableArn || '' }).promise()).Tags || [];
-                if (tags.find(({ Key, Value }) => (Key === 'Backend' && Value === config_1.config.backendTag))) {
-                    fs.writeFileSync(path.join(exports.tableFolder, `${table.TableName}.json`), JSON.stringify({
-                        TableArn: table.TableArn,
-                        TableName: table.TableName,
-                        AttributeDefinitions: (table.AttributeDefinitions || []).map((definition) => ({
-                            AttributeName: definition.AttributeName,
-                            AttributeType: definition.AttributeType,
-                        })),
-                        KeySchema: (table.KeySchema || []).map((schema) => ({
+                fs.writeFileSync(path.join(exports.tableFolder, `${table.TableName}.json`), JSON.stringify({
+                    TableArn: table.TableArn,
+                    TableName: table.TableName,
+                    AttributeDefinitions: (table.AttributeDefinitions || []).map((definition) => ({
+                        AttributeName: definition.AttributeName,
+                        AttributeType: definition.AttributeType,
+                    })),
+                    KeySchema: (table.KeySchema || []).map((schema) => ({
+                        AttributeName: schema.AttributeName,
+                        KeyType: schema.KeyType,
+                    })),
+                    ProvisionedThroughput: table.ProvisionedThroughput && {
+                        ReadCapacityUnits: table.ProvisionedThroughput.ReadCapacityUnits,
+                        WriteCapacityUnits: table.ProvisionedThroughput.WriteCapacityUnits,
+                    },
+                    LocalSecondaryIndexes: (table.LocalSecondaryIndexes || []).map((index) => ({
+                        IndexArn: index.IndexArn,
+                        IndexName: index.IndexName,
+                        Projection: index.Projection && {
+                            ProjectionType: index.Projection.ProjectionType,
+                            NonKeyAttributes: index.Projection.NonKeyAttributes,
+                        },
+                        KeySchema: (index.KeySchema || []).map((schema) => ({
                             AttributeName: schema.AttributeName,
                             KeyType: schema.KeyType,
                         })),
-                        ProvisionedThroughput: table.ProvisionedThroughput && {
-                            ReadCapacityUnits: table.ProvisionedThroughput.ReadCapacityUnits,
-                            WriteCapacityUnits: table.ProvisionedThroughput.WriteCapacityUnits,
+                    })),
+                    GlobalSecondaryIndexes: (table.GlobalSecondaryIndexes || []).map((index) => ({
+                        IndexArn: index.IndexArn,
+                        IndexName: index.IndexName,
+                        Projection: index.Projection && {
+                            ProjectionType: index.Projection.ProjectionType,
+                            NonKeyAttributes: index.Projection.NonKeyAttributes,
                         },
-                        LocalSecondaryIndexes: (table.LocalSecondaryIndexes || []).map((index) => ({
-                            IndexArn: index.IndexArn,
-                            IndexName: index.IndexName,
-                            Projection: index.Projection && {
-                                ProjectionType: index.Projection.ProjectionType,
-                                NonKeyAttributes: index.Projection.NonKeyAttributes,
-                            },
-                            KeySchema: (index.KeySchema || []).map((schema) => ({
-                                AttributeName: schema.AttributeName,
-                                KeyType: schema.KeyType,
-                            })),
+                        KeySchema: (index.KeySchema || []).map((schema) => ({
+                            AttributeName: schema.AttributeName,
+                            KeyType: schema.KeyType,
                         })),
-                        GlobalSecondaryIndexes: (table.GlobalSecondaryIndexes || []).map((index) => ({
-                            IndexArn: index.IndexArn,
-                            IndexName: index.IndexName,
-                            Projection: index.Projection && {
-                                ProjectionType: index.Projection.ProjectionType,
-                                NonKeyAttributes: index.Projection.NonKeyAttributes,
-                            },
-                            KeySchema: (index.KeySchema || []).map((schema) => ({
-                                AttributeName: schema.AttributeName,
-                                KeyType: schema.KeyType,
-                            })),
-                            ProvisionedThroughput: index.ProvisionedThroughput && {
-                                ReadCapacityUnits: index.ProvisionedThroughput.ReadCapacityUnits,
-                                WriteCapacityUnits: index.ProvisionedThroughput.WriteCapacityUnits,
-                            },
-                        })),
-                    }, null, 2));
-                }
+                        ProvisionedThroughput: index.ProvisionedThroughput && {
+                            ReadCapacityUnits: index.ProvisionedThroughput.ReadCapacityUnits,
+                            WriteCapacityUnits: index.ProvisionedThroughput.WriteCapacityUnits,
+                        },
+                    })),
+                }, null, 2));
             }
         }
     });
@@ -117,11 +114,8 @@ function createTable(name, keys) {
             params.AttributeDefinitions.push({ AttributeName: keys.range.name, AttributeType: keys.range.type });
             params.KeySchema.push({ AttributeName: keys.range.name, KeyType: 'RANGE' });
         }
-        const table = yield dynamo.createTable(params).promise();
-        if (table.TableDescription) {
-            yield dynamo.tagResource({ ResourceArn: table.TableDescription.TableArn || '', Tags: [{ Key: 'Backend', Value: config_1.config.backendTag }] }).promise();
-            yield downloadAll();
-        }
+        yield dynamo.createTable(params).promise();
+        yield downloadAll();
     });
 }
 exports.createTable = createTable;
