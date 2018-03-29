@@ -8,7 +8,7 @@ import * as roles from './roles';
 import { base, config } from './config';
 
 const appsync = new AWS.AppSync();
-const apiFolder = path.join(base, 'apis');
+export const apiFolder = path.join(base, 'apis');
 
 export async function downloadAll() {
   if (!fs.existsSync(apiFolder)) { fs.mkdirSync(apiFolder); }
@@ -56,6 +56,7 @@ export async function downloadAll() {
       fs.writeFileSync(path.join(myApiFolder, 'configuration.json'), JSON.stringify({
         apiId: api.apiId,
         name: api.name,
+        uris: api.uris,
         authenticationType: api.authenticationType,
         userPoolConfig: api.userPoolConfig && {
           userPoolId: api.userPoolConfig.userPoolId,

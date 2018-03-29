@@ -8,6 +8,8 @@ type Environment = {
   AWS_SECRET : string;
   AWS_REGION : string;
   CONFIG_DIR? : string;
+  GQL_USERNAME : string;
+  GQL_PASSWORD : string;
 };
 const rcfile = dotenv.config({ path: path.resolve(process.cwd(), '.maddirc') });
 
@@ -21,6 +23,8 @@ export const config = {
   secretAccessKey: parsedrc.AWS_SECRET,
   region: parsedrc.AWS_REGION,
   directory: parsedrc.CONFIG_DIR || 'config',
+  username: parsedrc.GQL_USERNAME,
+  password: parsedrc.GQL_PASSWORD,
 };
 
 export const base = path.join(process.cwd(), config.directory);

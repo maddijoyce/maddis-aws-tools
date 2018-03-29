@@ -14,6 +14,8 @@ exports.config = {
     secretAccessKey: parsedrc.AWS_SECRET,
     region: parsedrc.AWS_REGION,
     directory: parsedrc.CONFIG_DIR || 'config',
+    username: parsedrc.GQL_USERNAME,
+    password: parsedrc.GQL_PASSWORD,
 };
 exports.base = path.join(process.cwd(), exports.config.directory);
 if (!fs.existsSync(exports.base)) {

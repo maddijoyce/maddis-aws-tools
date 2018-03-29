@@ -14,20 +14,21 @@ const AWS = require("aws-sdk");
 const roles = require("./roles");
 const config_1 = require("./config");
 const identity = new AWS.CognitoIdentity();
-const cognito = new AWS.CognitoIdentityServiceProvider();
-const poolFolder = path.join(config_1.base, 'pools');
+exports.cognito = new AWS.CognitoIdentityServiceProvider();
+exports.poolFolder = path.join(config_1.base, 'pools');
 function downloadOne(id) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!fs.existsSync(poolFolder)) {
-            fs.mkdirSync(poolFolder);
+        if (!fs.existsSync(exports.poolFolder)) {
+            fs.mkdirSync(exports.poolFolder);
         }
         const idPoolIds = yield identity.listIdentityPools({ MaxResults: 10 }).promise();
         const idPools = yield Promise.all((idPoolIds.IdentityPools || []).map(({ IdentityPoolId }) => __awaiter(this, void 0, void 0, function* () {
             return (yield identity.describeIdentityPool({ IdentityPoolId: IdentityPoolId || '' }).promise());
         })));
-        const pool = (yield cognito.describeUserPool({ UserPoolId: id, }).promise()).UserPool;
+        const pool = (yield exports.cognito.describeUserPool({ UserPoolId: id, }).promise()).UserPool;
+        const clients = (yield exports.cognito.listUserPoolClients({ UserPoolId: id, MaxResults: 10 }).promise()).UserPoolClients || [];
         if (pool) {
-            fs.writeFileSync(path.join(poolFolder, `${pool.Id}.json`), JSON.stringify({
+            fs.writeFileSync(path.join(exports.poolFolder, `${pool.Id}.json`), JSON.stringify({
                 Id: pool.Id,
                 Name: pool.Name,
                 Policies: pool.Policies && {
@@ -52,12 +53,16 @@ function downloadOne(id) {
                     UserMigration: pool.LambdaConfig.UserMigration,
                 },
                 MfaConfiguration: pool.MfaConfiguration,
+                Clients: clients.map((client) => ({
+                    ClientId: client.ClientId,
+                    ClientName: client.ClientName,
+                })),
             }, null, 2));
             const idPool = idPools.find(({ CognitoIdentityProviders }) => !!(CognitoIdentityProviders || []).find(({ ProviderName }) => ((ProviderName || '').indexOf(pool.Id || 'ID NOT FOUND') >= 0)));
             if (idPool) {
                 const idPoolRoles = yield identity.getIdentityPoolRoles({ IdentityPoolId: idPool.IdentityPoolId }).promise();
                 yield roles.downloadMany(Object.values(idPoolRoles.Roles || {}));
-                fs.writeFileSync(path.join(poolFolder, `${idPool.IdentityPoolId}.json`), JSON.stringify({
+                fs.writeFileSync(path.join(exports.poolFolder, `${idPool.IdentityPoolId}.json`), JSON.stringify({
                     IdentityPoolId: idPool.IdentityPoolId,
                     IdentityPoolName: idPool.IdentityPoolName,
                     AllowUnauthenticatedIdentities: idPool.AllowUnauthenticatedIdentities,
@@ -81,11 +86,11 @@ function downloadMany(ids) {
 exports.downloadMany = downloadMany;
 function uploadAll() {
     return __awaiter(this, void 0, void 0, function* () {
-        const files = fs.readdirSync(poolFolder);
+        const files = fs.readdirSync(exports.poolFolder);
         for (const file of files) {
-            const pool = JSON.parse(fs.readFileSync(path.join(poolFolder, file), 'utf8'));
+            const pool = JSON.parse(fs.readFileSync(path.join(exports.poolFolder, file), 'utf8'));
             if (pool && pool.Id) {
-                yield cognito.updateUserPool({
+                yield exports.cognito.updateUserPool({
                     UserPoolId: pool.Id,
                     Policies: pool.Policies && {
                         PasswordPolicy: pool.Policies.PasswordPolicy && {

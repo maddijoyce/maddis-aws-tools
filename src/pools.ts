@@ -6,8 +6,8 @@ import * as roles from './roles';
 import { base } from './config';
 
 const identity = new AWS.CognitoIdentity();
-const cognito = new AWS.CognitoIdentityServiceProvider();
-const poolFolder = path.join(base, 'pools');
+export const cognito = new AWS.CognitoIdentityServiceProvider();
+export const poolFolder = path.join(base, 'pools');
 
 export async function downloadOne(id : string) {
   if (!fs.existsSync(poolFolder)) { fs.mkdirSync(poolFolder); }
@@ -17,6 +17,7 @@ export async function downloadOne(id : string) {
     await identity.describeIdentityPool({ IdentityPoolId: IdentityPoolId || '' }).promise())));
 
     const pool = (await cognito.describeUserPool({ UserPoolId: id, }).promise()).UserPool;
+    const clients = (await cognito.listUserPoolClients({ UserPoolId: id, MaxResults: 10 }).promise()).UserPoolClients || [];
     if (pool) {
       fs.writeFileSync(path.join(poolFolder, `${pool.Id}.json`), JSON.stringify({
         Id: pool.Id,
@@ -43,6 +44,10 @@ export async function downloadOne(id : string) {
           UserMigration: pool.LambdaConfig.UserMigration,
         },
         MfaConfiguration: pool.MfaConfiguration,
+        Clients: clients.map((client) => ({
+          ClientId: client.ClientId,
+          ClientName: client.ClientName,
+        })),
       }, null, 2));
 
       const idPool = idPools.find(({ CognitoIdentityProviders }) =>

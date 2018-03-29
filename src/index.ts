@@ -7,6 +7,7 @@ import * as lambdas from './lambda';
 import * as pools from './pools';
 import * as roles from './roles';
 import * as dynamos from './dynamo';
+import * as graphiql from './graphiql';
 
 program
   .command('download [services...]')
@@ -78,7 +79,7 @@ program
     });
   });
 
-  program
+program
   .command('create-index <table> <name> <hash> [range]')
   .description('Create dynamodb table')
   .option('-h, --hash <type>', 'hash key type')
@@ -90,6 +91,15 @@ program
     });
   });
 
+program
+  .command('graphiql <api> <client>')
+  .description('Run graphiql server for api')
+  .option('-u, --username <username>')
+  .option('-p, --passsword <password>')
+  .option('--port <port>')
+  .action((api, client, options) => {
+    graphiql.start(api, client, options.port || 3000, options.username, options.password);
+  });
 
 program
   .command('*', '', { noHelp: true })

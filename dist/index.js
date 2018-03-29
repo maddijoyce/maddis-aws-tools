@@ -8,6 +8,7 @@ const lambdas = require("./lambda");
 const pools = require("./pools");
 const roles = require("./roles");
 const dynamos = require("./dynamo");
+const graphiql = require("./graphiql");
 program
     .command('download [services...]')
     .description('Download one or more services')
@@ -97,6 +98,15 @@ program
         hash: { name: hash, type: (dynamos.typeToInitial(options.hash || 'S')) },
         range: range && { name: range, type: (dynamos.typeToInitial(options.range || 'S')) },
     });
+});
+program
+    .command('graphiql <api> <client>')
+    .description('Run graphiql server for api')
+    .option('-u, --username <username>')
+    .option('-p, --passsword <password>')
+    .option('--port <port>')
+    .action((api, client, options) => {
+    graphiql.start(api, client, options.port || 3000, options.username, options.password);
 });
 program
     .command('*', '', { noHelp: true })

@@ -16,16 +16,16 @@ const pools = require("./pools");
 const roles = require("./roles");
 const config_1 = require("./config");
 const appsync = new AWS.AppSync();
-const apiFolder = path.join(config_1.base, 'apis');
+exports.apiFolder = path.join(config_1.base, 'apis');
 function downloadAll() {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!fs.existsSync(apiFolder)) {
-            fs.mkdirSync(apiFolder);
+        if (!fs.existsSync(exports.apiFolder)) {
+            fs.mkdirSync(exports.apiFolder);
         }
         const apis = yield appsync.listGraphqlApis().promise();
         if (apis.graphqlApis && apis.graphqlApis.length) {
             for (const api of apis.graphqlApis) {
-                const myApiFolder = path.join(apiFolder, api.name || '.');
+                const myApiFolder = path.join(exports.apiFolder, api.name || '.');
                 if (!fs.existsSync(myApiFolder)) {
                     fs.mkdirSync(myApiFolder);
                 }
@@ -60,6 +60,7 @@ function downloadAll() {
                 fs.writeFileSync(path.join(myApiFolder, 'configuration.json'), JSON.stringify({
                     apiId: api.apiId,
                     name: api.name,
+                    uris: api.uris,
                     authenticationType: api.authenticationType,
                     userPoolConfig: api.userPoolConfig && {
                         userPoolId: api.userPoolConfig.userPoolId,
@@ -94,10 +95,10 @@ function downloadAll() {
 exports.downloadAll = downloadAll;
 function uploadAll() {
     return __awaiter(this, void 0, void 0, function* () {
-        const files = fs.readdirSync(apiFolder);
+        const files = fs.readdirSync(exports.apiFolder);
         if (files.length) {
             for (const file of files) {
-                const api = JSON.parse(fs.readFileSync(path.join(apiFolder, file, 'configuration.json'), 'utf8'));
+                const api = JSON.parse(fs.readFileSync(path.join(exports.apiFolder, file, 'configuration.json'), 'utf8'));
                 yield appsync.updateGraphqlApi({
                     apiId: api.apiId,
                     name: api.name,
@@ -137,11 +138,11 @@ function uploadAll() {
                     }
                     yield appsync.updateDataSource(dataSource).promise();
                 }
-                const typeFiles = fs.readdirSync(path.join(apiFolder, file));
+                const typeFiles = fs.readdirSync(path.join(exports.apiFolder, file));
                 for (const typeFile of typeFiles) {
-                    if (fs.existsSync(path.join(apiFolder, file, typeFile, 'configuration.json'))) {
-                        const definition = fs.readFileSync(path.join(apiFolder, file, typeFile, 'definition.gql'), 'utf8');
-                        const type = JSON.parse(fs.readFileSync(path.join(apiFolder, file, typeFile, 'configuration.json'), 'utf8'));
+                    if (fs.existsSync(path.join(exports.apiFolder, file, typeFile, 'configuration.json'))) {
+                        const definition = fs.readFileSync(path.join(exports.apiFolder, file, typeFile, 'definition.gql'), 'utf8');
+                        const type = JSON.parse(fs.readFileSync(path.join(exports.apiFolder, file, typeFile, 'configuration.json'), 'utf8'));
                         yield appsync.updateType({
                             apiId: api.apiId,
                             typeName: type.typeName,
@@ -149,8 +150,8 @@ function uploadAll() {
                             definition: definition,
                         }).promise();
                         for (const resolver of type.resolvers) {
-                            const request = fs.readFileSync(path.join(apiFolder, file, typeFile, `${resolver.fieldName}.request.vtl`), 'utf8');
-                            const response = fs.readFileSync(path.join(apiFolder, file, typeFile, `${resolver.fieldName}.response.vtl`), 'utf8');
+                            const request = fs.readFileSync(path.join(exports.apiFolder, file, typeFile, `${resolver.fieldName}.request.vtl`), 'utf8');
+                            const response = fs.readFileSync(path.join(exports.apiFolder, file, typeFile, `${resolver.fieldName}.response.vtl`), 'utf8');
                             yield appsync.updateResolver({
                                 apiId: api.apiId,
                                 typeName: type.typeName,
@@ -169,7 +170,7 @@ function uploadAll() {
 exports.uploadAll = uploadAll;
 function createDynamoDataSource(apiName, name, role) {
     return __awaiter(this, void 0, void 0, function* () {
-        const api = JSON.parse(fs.readFileSync(path.join(apiFolder, apiName, 'configuration.json'), 'utf8'));
+        const api = JSON.parse(fs.readFileSync(path.join(exports.apiFolder, apiName, 'configuration.json'), 'utf8'));
         yield appsync.createDataSource({
             apiId: api.apiId,
             name: name,
@@ -186,7 +187,7 @@ function createDynamoDataSource(apiName, name, role) {
 exports.createDynamoDataSource = createDynamoDataSource;
 function createType(apiName, typeName, typeType) {
     return __awaiter(this, void 0, void 0, function* () {
-        const api = JSON.parse(fs.readFileSync(path.join(apiFolder, apiName, 'configuration.json'), 'utf8'));
+        const api = JSON.parse(fs.readFileSync(path.join(exports.apiFolder, apiName, 'configuration.json'), 'utf8'));
         yield appsync.createType({
             apiId: api.apiId,
             definition: `${typeType} ${typeName} {
@@ -200,7 +201,7 @@ function createType(apiName, typeName, typeType) {
 exports.createType = createType;
 function createResolver(apiName, type, field, dataSource) {
     return __awaiter(this, void 0, void 0, function* () {
-        const api = JSON.parse(fs.readFileSync(path.join(apiFolder, apiName, 'configuration.json'), 'utf8'));
+        const api = JSON.parse(fs.readFileSync(path.join(exports.apiFolder, apiName, 'configuration.json'), 'utf8'));
         yield appsync.createResolver({
             apiId: api.apiId,
             typeName: type,
