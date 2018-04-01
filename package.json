@@ -1,6 +1,6 @@
 {
   "name": "maddis-aws-tools",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Scripts for downloading and uploading to aws using json, gql and vtl templates",
   "main": "src/index.js",
   "repository": "https://github.com/maddijoyce/maddis-aws-tools",
