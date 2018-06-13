@@ -1,6 +1,6 @@
 {
   "name": "maddis-aws-tools",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Scripts for downloading and uploading to aws using json, gql and vtl templates",
   "main": "src/index.js",
   "repository": "https://github.com/maddijoyce/maddis-aws-tools",
@@ -26,7 +26,6 @@
     "koa": "^2.5.0",
     "koa-router": "^7.4.0",
     "prettier": "1.11.1",
-    "sleep": "^5.1.1",
     "ts-node": "^5.0.1",
     "tslib": "^1.9.0",
     "tslint": "^5.9.1",
